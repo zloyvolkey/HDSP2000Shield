@@ -1,5 +1,5 @@
-#include "Arduino.h" 
-#include <wiring.h>
+#include "Arduino.h"
+#include <wiring_private.h>
 
 #define BIT_READ(value, bit) (((value) >> (bit)) & 0x01)
 #define BIT_SET(value, bit) ((value) |= (1UL << (bit)))
@@ -123,7 +123,7 @@ uint8_t register saveSreg = SREG;                          \
 cli();                                                     \
 bitWrite(*(A), __digitalPinToBit(P), (V) );                   \
 SREG=saveSreg;                                             \
-} 
+}
 
 
 #ifndef digitalWriteFast
@@ -147,7 +147,7 @@ else pinMode((P), (V)); \
 	do {if (__builtin_constant_p(P) )  __atomicWrite((uint8_t*) __digitalPinToTimer(P),P,0) \
 		else turnOffPWM((P));   \
 } while (0)
-#endif		
+#endif
 
 
 #ifndef digitalReadFast
@@ -157,4 +157,3 @@ else pinMode((P), (V)); \
 	( BIT_READ(*digitalPinToPINReg(P), __digitalPinToBit(P))) ) : \
 	digitalRead((P))
 #endif
-
