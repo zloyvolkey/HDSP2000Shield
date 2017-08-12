@@ -10,47 +10,67 @@
 #include "matrixTable.h"
 #include "digitalWriteFast.h" //the inbuilt arduino digitalWrite functionality is dog slow. This is faster. Replace "digitalWrite with digitalWrite in this file for maximum compatiblity"
 
-HDSP2000Shield HDSP2000;
+//HDSP2000Shield HDSP2000;
 
-HDSP2000Shield::HDSP2000Shield()
+HDSP2000Shield::HDSP2000Shield(int displayCount, int pin_col1,
+    int pin_col2, int pin_col3, int pin_col4, int pin_col5,
+    int pin_clock, int pin_din)
 {
-  for(int i = 0; i <= (dispCount*4); i++) //Initially Fill Buffer.
-  {
-    txtBuffer[i] = ' ';
-  }
+    dispCount = displayCount;
+    _column1 = pin_col1;
+    _column2 = pin_col2;
+    _column3 = pin_col3;
+    _column4 = pin_col4;
+    _column5 = pin_col5;
+    _clock = pin_clock;
+    _din = pin_din;
+
+    initialized = true;
+
+	for (int i = 0; i <= (dispCount * 4); i++)  //Initially Fill Buffer.
+	{
+		txtBuffer[i] = ' ';
+	}
 }
+
 void HDSP2000Shield::begin(int refreshRate)
 {
-  //{COL1, COL2, COL3, COL4, COL5}
-  bus[0] = COL1;
-  bus[1] = COL2;
-  bus[2] = COL3;
-  bus[3] = COL4;
-  bus[4] = COL5;
-  curCol = 0;
+	if (!initialized)
+	{
+		return;
+	}
 
+	//{_column1, _column2, _column3, _column4, _column5}
+	bus[0] = _column1;
+	bus[1] = _column2;
+	bus[2] = _column3;
+	bus[3] = _column4;
+	bus[4] = _column5;
+	curCol = 0;
 
-  for(int i = 0; i < 5; i++)
-  {
-    pinMode(bus[i], OUTPUT); //bus as output
-  }
+	for (int i = 0; i < 5; i++)
+	{
+		pinMode(bus[i], OUTPUT); //bus as output
+	}
 
-  pinMode(DIN, OUTPUT); // DataIn Displayz
-  pinMode(CLK, OUTPUT); // Clock
-  pinMode(VB, OUTPUT);  // VB
+	pinMode(_din, OUTPUT); // DataIn Displayz
+	pinMode(_clock, OUTPUT); // Clock
+	pinMode(_vb, OUTPUT); // _vb
 
-  TCCR1A = 0;                 // clear control register A
-  TCCR1B = _BV(WGM13);        // set mode 8: phase and frequency correct pwm, stop the timer
-  if(refreshRate > 0)
-  {
-	setPeriod(refreshRate);
-  }
-  else
-  {
-	setPeriod(3000);
-  }
-  TIMSK1 = _BV(TOIE1);                                     // sets the timer overflow interrupt enable bit
+	TCCR1A = 0;               // clear control register A
+	TCCR1B = _BV(WGM13);      // set mode 8: phase and frequency correct pwm, stop the timer
+	if (refreshRate > 0)
+	{
+		setPeriod(refreshRate);
+	}
+	else
+	{
+		setPeriod(3000);
+	}
+
+	TIMSK1 = _BV(TOIE1);                                   // sets the timer overflow interrupt enable bit
 }
+
 
 void HDSP2000Shield::setPeriod(long microseconds)
 {
@@ -84,12 +104,12 @@ void HDSP2000Shield::driveDisplay()
    {
      curCol = 0;
    }
-   //digitalWriteFast(VB,HIGH);       // Blank
+   //digitalWriteFast(_vb,HIGH);       // Blank
    long currentColData = 0;    // buffer for column data
 
    if(curCol == 0) //last column branch
    {
-      digitalWriteFast(COL5,LOW);     // off previous column
+      digitalWriteFast(_column5,LOW);     // off previous column
    }
    else
    {
@@ -102,16 +122,16 @@ void HDSP2000Shield::driveDisplay()
      shiftlong(currentColData);
    }
   digitalWriteFast(bus[curCol],HIGH);  // on selected column
-  //digitalWriteFast(VB,LOW);      // column on
+  //digitalWriteFast(_vb,LOW);      // column on
   curCol++; //next column
 }
 
 void HDSP2000Shield::shiftlong(long val) {
   for (int i = 0; i < 28; i++)  {
-        digitalWriteFast(CLK, HIGH);
-        digitalWriteFast(DIN, !!(val & (1L << i)));
+        digitalWriteFast(_clock, HIGH);
+        digitalWriteFast(_din, !!(val & (1L << i)));
         delayMicroseconds(1);
-        digitalWriteFast(CLK, LOW);
+        digitalWriteFast(_clock, LOW);
   }
 }
 
